@@ -1,0 +1,35 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: Bifrost connectivity probe.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  probe:
+    steps:
+      - id: egress-ip
+        name: Runner egress IP
+        uses: docker://curlimages/curl:8.10.1
+        shell: sh
+        run: |
+          echo "== runner egress IP =="
+          curl -4 -sS --max-time 15 icanhazip.com || echo "curl exit $?"
+
+      - id: prod-global-bifrost
+        name: Probe prod/global bifrost
+        uses: docker://curlimages/curl:8.10.1
+        shell: sh
+        run: |
+          echo "== https://bifrost.cloudbees.io (prod/global) =="
+          curl -sS -i --max-time 15 https://bifrost.cloudbees.io/anthropic/v1/messages \
+            -X POST -H 'content-type: application/json' -d '{}' || echo "curl exit $?"
+
+      - id: preprod-bifrost
+        name: Probe preprod bifrost
+        uses: docker://curlimages/curl:8.10.1
+        shell: sh
+        run: |
+          echo "== https://bifrost.saas-preprod.beescloud.com (preprod) =="
+          curl -sS -i --max-time 15 https://bifrost.saas-preprod.beescloud.com/anthropic/v1/messages \
+            -X POST -H 'content-type: application/json' -d '{}' || echo "curl exit $?"
